@@ -1,0 +1,5 @@
+Controls:
+Right-Click to place particles
+Left-Click to select particles
+Shift + Left-Click to snap selected particle to mouse
+Left-Click on a selected particle to move it

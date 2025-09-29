@@ -1,0 +1,76 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "MyHelpers.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+struct BodyInputData
+{
+    float2 pos;
+    float mass;
+    float radius;
+    float2 last;
+
+};
+StructuredBuffer<BodyInputData> IData;
+
+struct BodyOutputData
+{
+    float2 force;
+    int collided;
+    int collisionIndex;
+       
+};
+
+RWStructuredBuffer<BodyOutputData> OData;
+float BigG;
+uint ArrayLength;
+
+[numthreads(16,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    BodyOutputData output;
+    output.force = float2(0, 0);
+    output.collided = 0;
+    output.collisionIndex = 0;
+       
+    for (uint i = 0; i < ArrayLength; i++)
+    {
+      
+        if (id.x >= ArrayLength)
+        {
+            break;
+        }
+
+        float combinedRadius = IData[id.x].radius + IData[i].radius;
+        float2 direction = IData[i].pos - IData[id.x].pos;
+        float totalmass = IData[id.x].mass * IData[i].mass;
+        float sqrdist = direction.x * direction.x + direction.y * direction.y;
+
+        float isTooSmall = 1 - step(0.01, sqrdist * 1.0);
+        sqrdist = max(sqrdist, combinedRadius * combinedRadius - 0.05);
+   //     sqrdist = max(sqrdist, 0.01);
+
+        float IsNotSelf =  step(0.5, abs((float)i - id.x));
+            
+         //much fancier way of calculating collisions
+        
+        float minDistOverTimestep = MinimumDistanceOverTimeStep(IData[id.x].last, IData[id.x].pos, IData[i].last, IData[i].pos);
+
+        direction = lerp(direction, float2(0, 0.001), isTooSmall);
+        
+        output.force += normalize(direction) * (totalmass * BigG / sqrdist) * IsNotSelf;
+            
+        if (combinedRadius >= minDistOverTimestep && i != id.x)
+        {
+            output.collisionIndex = i;
+            output.collided = 1;
+        }        
+    }
+    
+    OData[id.x] = output;
+    
+  
+}

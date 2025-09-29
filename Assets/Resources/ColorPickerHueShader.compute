@@ -1,0 +1,115 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "MyHelpers.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+float Power;
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    
+    
+    float2 Dims = float2(256, 256);
+    float2 HalfDims = Dims / 2.0;
+    
+    float3 Red = float3(1, 0, 0);
+    float3 Yellow = float3(1, 1, 0);
+    float3 Green = float3(0, 1, 0);
+    float3 Cyan = float3(0, 1, 1);
+    float3 Blue = float3(0, 0, 1);
+    float3 Magenta = float3(1, 0, 1);
+
+    float3 Colors[6] = {Red,Yellow,Green,Cyan,Blue,Magenta};
+    float indexer = 0;
+    float t;
+    
+    float2 dir = (id.xy - HalfDims);
+    float angle = degrees(SignedAngle2D(dir, float2(0, 1))) + 180;
+  //  angle += Power;
+    angle %= 360;
+    angle = angle / 360 * 6;
+    
+    int lowindex = floor(angle);
+    int Highindex = ceil(angle) % 6;
+    t = angle % 1;
+    
+    
+    Result[id.xy] = float4(lerp(Colors[lowindex], Colors[Highindex],t), 1);
+    
+    
+    
+    
+    
+    /*
+    float2 Dims = float2(256, 256);
+    float2 HalfDims = Dims / 2.0;
+    
+    float2 uv = id.xy / Dims;
+    
+    
+    Result[id.xy] = float4(uv,0,1);
+    
+    
+    
+    
+    
+    float2 Dims = float2(256, 256);
+    float2 HalfDims = Dims / 2.0;
+    
+    
+    
+    float OTDeg = radians(120);
+    float mult = Power;
+    float2 dir = (id.xy - HalfDims) / length(HalfDims) * 10;
+    dir = normalize(dir);
+    
+    
+    float2 RedDir = float2(cos(0), sin(0)) ;
+    float2 GreenDir = float2(cos(OTDeg), sin(OTDeg)) ;
+    float2 BlueDir = float2(cos(OTDeg * 2), sin(OTDeg * 2)) ;
+
+    float red = dot(dir, RedDir) * 4;
+    float green = dot(dir, GreenDir) *4;
+    float blue = dot(dir, BlueDir) * 4;
+    
+    
+    
+    Result[id.xy] = float4(red, green, blue, 1);
+
+    
+    
+    
+    
+    
+    
+    
+    /*
+    
+    float2 Dims = float2(256, 256);
+    float2 HalfDims = Dims / 2.0;
+    float3 ShiftedHue = normalize(float3(1, 0, 0)) ;
+    
+    float2 dir = (id.xy - HalfDims);
+    
+    float angle = SignedAngle2D(dir, float2(0,1)) /2;
+    
+    float cosAngle = cos(angle);
+    float3 q = float3(1, 1, 1) * sin(angle);
+
+    ShiftedHue.xyz = cosAngle * ShiftedHue + cross(q, ShiftedHue);
+    
+    float Dot = -dot(q, ShiftedHue);
+   
+    ShiftedHue.xyz = float3(Dot * -q + cosAngle * ShiftedHue + cross(ShiftedHue, -q));
+    ShiftedHue = saturate(ShiftedHue);
+    
+    float4 outputcolor = float4(ShiftedHue, Result[id.xy].a);    
+    
+    float t = 1 - (length(dir) / HalfDims * Sqrt2);
+    
+    t = pow(abs(t), Power);
+    
+    Result[id.xy] = lerp(saturate(outputcolor), float4(1, 1, 1, 1), t);
+    */
+}

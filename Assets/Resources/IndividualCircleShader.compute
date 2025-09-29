@@ -1,0 +1,50 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+
+float2 CameraPos;
+float Radius;
+float Scale;
+float2 Dims;
+float2 StartingPos;
+float BoundingBoxDims;
+RWTexture2D<float4> Result;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+  
+    float4 white = float4(1, 1, 1, 1);
+    float sqrtScale = sqrt(Scale);
+    float2 ScreenSpacePos = StartingPos - CameraPos;
+    ScreenSpacePos /= (Dims / Scale);
+
+
+    // check if inside viewport
+    
+    if (!(ScreenSpacePos.x > 0.5 ||
+        ScreenSpacePos.y > 0.5 ||
+        ScreenSpacePos.x < -0.5 ||
+        ScreenSpacePos.y < -0.5))
+    {
+
+        float rad = Radius * Scale;
+
+        uint2 pos = floor(ScreenSpacePos * Dims) + float2(id.x, id.y) + Dims / 2.0 - (rad);
+                
+        float4 Base = Result[pos];
+                
+        float t = smoothstep(0, rad * 0.5, rad - distance(float2(rad, rad), float2(id.x, id.y)));
+                
+        Result[pos] = lerp(Base, white, t);
+        
+        
+      //  Result[floor(ScreenSpacePos * Dims) + Dims / 2.0] = float4(1, 1, 1, 1);
+
+       
+        
+    }
+}

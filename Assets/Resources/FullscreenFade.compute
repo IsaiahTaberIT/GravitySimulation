@@ -1,0 +1,131 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "MyHelpers.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+float2 CameraPos;
+float2 Dims;
+float2 SimDims;
+float RawScale;
+float Scale;
+float4 Color;
+float2 BackgroundDims;
+
+RWTexture2D<float4> Background;
+float BackGroundTiling;
+float Offset;
+
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float2 ScreenSpacePos = SimDims ;
+    ScreenSpacePos *= Scale;
+    ScreenSpacePos /= 2.0;
+    float2 ScaledCameraPos = CameraPos * Scale;
+   // ScaledCameraPos.x *= 1;
+    float2 halfdims = Dims / 2.0;
+    
+    float4 outcolor = float4(1, 1, 1, 1);
+    outcolor.rgb = outcolor.rgb - Color.rgb;
+    outcolor *= Color.a;
+    Result[id.xy] -= pow(abs(outcolor), 3);
+    Result[id.xy] -= float4(1, 1, 1, 0) * 0.0019608297;
+    
+    /*
+    float4 col = float4(0, 0, 0, 0);
+    
+    int iterations = 3;
+    
+    for (int i = 0; i < iterations; i++)
+    {
+        float2 worldSpacePos = id.xy / Dims ;
+        worldSpacePos = worldSpacePos - 0.5;
+        worldSpacePos = worldSpacePos;
+        worldSpacePos *= Dims / Scale;
+  
+        
+        float2 checkerdims = worldSpacePos + SimDims + CameraPos;
+
+        float roundedScale = log10(1 / Scale);
+        
+        float interpolate = roundedScale;
+        
+        roundedScale = floor(roundedScale);
+        
+        interpolate -= roundedScale;
+ 
+        interpolate = 1 - interpolate;
+       // interpolate -= 0.5;
+       // interpolate = abs(interpolate);
+        
+        roundedScale = pow(abs(10), roundedScale);
+        float Size = (70000 * (roundedScale / pow(abs(10), i + 1)));
+    
+        checkerdims.x %= Size;
+        checkerdims.y %= Size;
+    
+        float Brightness = 0.04;
+    
+        float IisZero = 1 - step(0.5, i);
+        
+        float IEqualsIterations= step(iterations - 1.5, i);
+
+        
+        
+        col += lerp(float4(0, 0, 0, 1), float4(Brightness, Brightness * 1.05, Brightness * 1.15, 1), (step((Size / 2.0), checkerdims.x) + step((Size / 2.0), checkerdims.y)) % 2) * ((interpolate * IisZero + 1) * (1)) / (iterations * 4 - (i * 4));
+    }
+    
+    
+    col = max(Result[id.xy], col);
+    Result[id.xy] = col;
+    
+   */
+    
+    
+    if (id.x - halfdims.x > ScreenSpacePos.x - ScaledCameraPos.x ||
+        id.x - halfdims.x < -ScreenSpacePos.x - ScaledCameraPos.x ||
+        id.y - halfdims.y > ScreenSpacePos.y - ScaledCameraPos.y ||
+        id.y - halfdims.y < -ScreenSpacePos.y - ScaledCameraPos.y
+        )
+    {
+        
+        
+        //sdf 
+      
+     
+
+        
+
+        float2 d = abs(id.xy - halfdims) - Dims;
+        
+        float t = length((halfdims - id.xy) / Dims * Sqrt2);
+
+        t = pow(abs(t), 1.25);
+
+    
+        float modDimsx = (((float) id.x + -halfdims.x) / Scale + CameraPos.x) / Dims.x * BackGroundTiling;
+        float modDimsy = (((float) id.y + -halfdims.y) / Scale + CameraPos.y) / Dims.y * BackGroundTiling;
+
+
+        absMod(modDimsx, BackgroundDims.x);
+        absMod(modDimsy, BackgroundDims.y);
+        
+        Result[id.xy] = float4(lerp(float3(0, 0, 0), Background[int2(modDimsx, modDimsy)].rgb, 1 - t) * 0.15,1);
+    
+        float offsetAmount = 1;
+        
+        
+        
+        if (abs(id.x - halfdims.x + ScaledCameraPos).x < SimDims.x * Scale / 2.0 + offsetAmount && abs(id.y - halfdims.y + ScaledCameraPos).y < SimDims.y * Scale / 2.0 + offsetAmount)
+        {
+            Result[id.xy] = float4(0.5, 0.5, 0.5, 1);
+        }
+     
+        
+    }
+
+}

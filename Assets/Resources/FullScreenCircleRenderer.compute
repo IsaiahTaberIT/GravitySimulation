@@ -1,0 +1,95 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+
+struct BodyInputData
+{
+    float2 pos;
+    float mass;
+    float radius;
+    float2 last;
+};
+
+float2 CameraPos;
+float Scale;
+float2 Dims;
+
+uint Bodies;
+StructuredBuffer<BodyInputData> Circles;
+RWTexture2D<float4> Result;
+
+[numthreads(8,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    
+    float4 white = float4(1, 1, 1, 1);
+    float sqrtScale = sqrt(Scale);
+    float2 ScreenSpacePos = Circles[id.x].last - CameraPos;
+  
+
+    
+    
+    
+    ScreenSpacePos /= (Dims / Scale);
+
+    float isinViewport = 1;
+    
+    isinViewport *= step(-0.5,ScreenSpacePos.x);
+    isinViewport *= step(-0.5,ScreenSpacePos.y);
+    isinViewport *= step( ScreenSpacePos.x,0.5);
+    isinViewport *= step(ScreenSpacePos.y, 0.5);
+    
+    float doRender = isinViewport;
+    doRender *= step(id.x, Bodies);
+    
+    float2 pos = ScreenSpacePos * Dims + Dims / 2.0;
+    int2 floorpos = floor(ScreenSpacePos);
+    
+    
+    float brightness = clamp(Circles[id.x].radius * 2 * sqrtScale, 0.05, 1);
+
+    
+    Result[pos] = lerp(Result[pos], float4(1, 1, 1, 1), brightness * doRender);
+
+    
+    /*
+    // check if inside viewport
+    
+    if (!(ScreenSpacePos.x > 0.5 ||
+        ScreenSpacePos.y > 0.5||
+        ScreenSpacePos.x < -0.5||
+        ScreenSpacePos.y < -0.5) && Bodies >= id.x)
+    {
+        // create bounding box;
+        
+        
+        
+        
+        float rad = Circles[id.x].radius * Scale;
+        
+        for (int i = 0; i < rad * 2; i++)
+        {
+            for (int j = 0; j < rad * 2; j++)
+            {
+                uint2 pos = floor(ScreenSpacePos * Dims) + float2(i, j) + Dims / 2.0 - (rad);
+                
+                float4 Base = Result[pos];
+                
+                float t = smoothstep(0, rad * 0.25, rad - distance(float2(rad, rad), float2(i, j)));
+                Result[pos] = lerp(Base, white, t);
+                
+            }
+        }
+        
+        
+        Result[floor(ScreenSpacePos * Dims) + Dims / 2.0] = float4(1, 1, 1, 1);
+
+       
+        
+    }
+*/
+    
+}

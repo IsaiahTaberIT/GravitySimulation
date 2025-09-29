@@ -1,0 +1,34 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "MyHelpers.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+float4 Hue;
+float Power;
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float2 Dims = float2(255.0, 255.0) ;
+
+    
+    float tx = InverseLerp(0, (float) Dims.x, (float) id.x);
+
+    float ty = InverseLerp(0, (float) Dims.y, (float) id.y);
+
+    
+    float4 WhiteLerp = lerp(Hue, float4(1, 1, 1, 1), tx);
+    float4 BlackLerp = lerp(float4(0, 0, 0, 1), WhiteLerp, ty);
+    
+    
+   // BlackLerp.rgb = float3(1, 1, 1) * tx;
+    
+    
+
+   // Result[id.xy] = float4(tx.xxx,1);
+    Result[id.xy] = BlackLerp;
+
+    
+
+}

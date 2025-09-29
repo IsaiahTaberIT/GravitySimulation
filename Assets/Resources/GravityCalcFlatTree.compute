@@ -1,0 +1,301 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "MyHelpers.hlsl"
+
+    
+ 
+struct PointAtIndex
+{
+    float Mass;
+    int Index;
+    float2 Point;
+};
+
+
+
+struct Rectangle
+{
+    
+    
+    
+    float2 Center;
+    float2 Scale;
+};
+
+struct BodyInputData
+{
+    float2 pos;
+    float mass;
+    float radius;
+    float2 last;
+
+};
+
+struct Node
+{
+    int PtrNW;
+    int PtrNE;
+    int PtrSW;
+    int PtrSE;
+    int SelfIndex;
+    int Leaves;
+    float2 COM;
+    float TotalMass;
+    
+    Rectangle Bounds;
+    
+    int leaf1Ptr;
+    int leaf2Ptr;
+    int leaf3Ptr;
+    int leaf4Ptr;
+
+    
+};
+
+
+
+
+
+ 
+float SDFRectangle(Rectangle r, float2 p)
+{
+    float2 d = abs(p - r.Center) - r.Scale; 
+
+    float outsideDist = length(max(d, 0.0));
+
+    float insideDist = min(max(d.x, d.y), 0.0);
+
+    return outsideDist + insideDist;
+}
+
+struct BodyOutputData
+{
+    float2 force;
+    int collided;
+    int collisionIndex;
+       
+};
+
+float DistanceThreshold;
+float BigG;
+uint ArrayLength;
+StructuredBuffer<BodyInputData> IData;
+StructuredBuffer<Node> Tree;
+RWStructuredBuffer<BodyOutputData> OData;
+
+struct Iterations
+{
+    int Stack;
+    int Leaf;
+    
+};
+
+
+
+
+[numthreads(16,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    Node Stack[28];
+    Iterations it;
+    it.Stack = 0;
+    it.Leaf = 0;
+
+    Iterations StackIterations[28] = (Iterations[28]) 0;
+
+    int Ptr = 0;
+ 
+    Stack[0] = Tree[0];
+    
+    float2 direction = float2(0, 0);
+    float sqrdist = 0;
+    float totalmass = 0;
+    float combinedRadius = 0;
+    float isTooSmall = 0;
+    float minDistOverTimestep;
+    int i = 0;
+    
+    BodyOutputData output;
+    output.force = float2(0, 0);
+    output.collided = 0;
+    output.collisionIndex = 0;
+
+    BodyInputData other;
+    
+    
+    if (id.x <= ArrayLength)
+    {
+        while (Ptr >= 0)
+        {
+            if (SDFRectangle((Stack[Ptr].Bounds), IData[id.x].pos) >= DistanceThreshold && Stack[Ptr].Leaves != 0)
+            {
+                
+                direction = Stack[Ptr].COM / Stack[Ptr].TotalMass;
+                direction -= IData[id.x].pos;
+                totalmass = IData[id.x].mass * Stack[Ptr].TotalMass;
+                sqrdist = direction.x * direction.x + direction.y * direction.y;
+                output.force += normalize(direction) * (totalmass * BigG / sqrdist);
+
+                Ptr--;
+
+            }
+            else if (Stack[Ptr].Leaves < 5)
+            {
+                
+                while (StackIterations[Ptr].Leaf < min(4,Stack[Ptr].Leaves))
+                {
+                    switch (StackIterations[Ptr].Leaf)
+                    {
+                        case 0:
+                            i = Stack[Ptr].leaf1Ptr;
+                            break;
+                        case 1:
+                            i = Stack[Ptr].leaf2Ptr;
+                            break;
+                        case 2:
+                            i = Stack[Ptr].leaf3Ptr;
+                            break;
+                        case 3:
+                            i = Stack[Ptr].leaf4Ptr;
+                            break;
+                        default:
+                            break;
+                    }
+                    
+                    if (i != (int) id.x)
+                    {
+                        combinedRadius = IData[id.x].radius + IData[i].radius;
+                        direction = IData[i].pos - IData[id.x].pos;
+                        totalmass = IData[id.x].mass * IData[i].mass;
+                        sqrdist = direction.x * direction.x + direction.y * direction.y;
+
+                        isTooSmall = 1 - step(0.01, sqrdist);
+                        sqrdist = max(sqrdist, combinedRadius * combinedRadius - 0.05);
+                        //much fancier way of calculating collisions
+        
+                        minDistOverTimestep = MinimumDistanceOverTimeStep(IData[id.x].last, IData[id.x].pos, IData[i].last, IData[i].pos);
+
+                        direction = lerp(direction, float2(0, -0.001), isTooSmall);
+        
+                        output.force += normalize(direction) * (totalmass * BigG / sqrdist);
+            
+                        if (combinedRadius >= minDistOverTimestep)
+                        {
+                            output.collisionIndex = i;
+                            output.collided = 1;
+                        }
+                    }
+                    
+                    StackIterations[Ptr].Leaf++;
+                   
+                }
+                
+                
+
+
+                Ptr--;
+            }
+            else
+            {
+           
+                if (StackIterations[Ptr].Stack == 0)
+                {
+                    StackIterations[Ptr].Stack++;
+                    Stack[Ptr + 1] = Tree[Stack[Ptr].PtrSW];
+                    StackIterations[Ptr + 1].Stack = 0;
+                    StackIterations[Ptr + 1].Leaf = 0;
+
+                    Ptr++;
+                }
+                else if (StackIterations[Ptr].Stack == 1)
+                {
+                    StackIterations[Ptr].Stack++;
+                    Stack[Ptr + 1] = Tree[Stack[Ptr].PtrNE];
+                    StackIterations[Ptr + 1].Stack = 0;
+                    StackIterations[Ptr + 1].Leaf = 0;
+
+                    Ptr++;
+                }
+                else if (StackIterations[Ptr].Stack == 2)
+                {
+                    StackIterations[Ptr].Stack++;
+                    Stack[Ptr + 1] = Tree[Stack[Ptr].PtrNW];
+                    StackIterations[Ptr + 1].Stack = 0;
+                    StackIterations[Ptr + 1].Leaf = 0;
+
+                    Ptr++;
+                }
+                else if (StackIterations[Ptr].Stack == 3)
+                {
+                    StackIterations[Ptr].Stack++;
+                    Stack[Ptr + 1] = Tree[Stack[Ptr].PtrSE];
+                    StackIterations[Ptr + 1].Stack = 0;
+                    StackIterations[Ptr + 1].Leaf = 0;
+
+                    Ptr++;
+                }
+                else
+                {
+                    // catch the point in inside once just before popping
+                    
+                    while (StackIterations[Ptr].Leaf < min(4, Stack[Ptr].Leaves))
+                    {
+                        switch (StackIterations[Ptr].Leaf)
+                        {
+                            case 0:
+                                i = Stack[Ptr].leaf1Ptr;
+                                break;
+                            case 1:
+                                i = Stack[Ptr].leaf2Ptr;
+                                break;
+                            case 2:
+                                i = Stack[Ptr].leaf3Ptr;
+                                break;
+                            case 3:
+                                i = Stack[Ptr].leaf4Ptr;
+                                break;
+                            default:
+                                break;
+                        }
+                    
+                        if (i != (int) id.x)
+                        {
+                            combinedRadius = IData[id.x].radius + IData[i].radius;
+                            direction = IData[i].pos - IData[id.x].pos;
+                            totalmass = IData[id.x].mass * IData[i].mass;
+                            sqrdist = direction.x * direction.x + direction.y * direction.y;
+
+                            isTooSmall = 1 - step(0.01, sqrdist);
+                            sqrdist = max(sqrdist, combinedRadius * combinedRadius - 0.05);
+                            //much fancier way of calculating collisions
+        
+                            minDistOverTimestep = MinimumDistanceOverTimeStep(IData[id.x].last, IData[id.x].pos, IData[i].last, IData[i].pos);
+
+                            direction = lerp(direction, float2(0, -0.001), isTooSmall);
+        
+                            output.force += normalize(direction) * (totalmass * BigG / sqrdist);
+            
+                            if (combinedRadius >= minDistOverTimestep)
+                            {
+                                output.collisionIndex = i;
+                                output.collided = 1;
+                            }
+                        }
+                    
+                        StackIterations[Ptr].Leaf++;
+                   
+                    }
+                    
+                    Ptr--;
+
+                }
+            }
+        }
+    }
+   
+    OData[id.x] = output;
+   
+}
+
+
