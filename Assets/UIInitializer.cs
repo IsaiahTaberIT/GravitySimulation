@@ -233,7 +233,7 @@ public class UIInitializer : MonoBehaviour
         SettingsSaveLoad.Load(Keys.MainNormalizeVelocity, ref GC.NormalizeVelocity);
         MyMainUI.NormalizeVel.isOn = GC.NormalizeVelocity;
 
-
+        
         SettingsSaveLoad.Load(Keys.MainMaxParticles, ref GravityController.MaxParticles);
         MyMainUI.TMP_MaxParticles.text = GravityController.MaxParticles.ToString();
 
