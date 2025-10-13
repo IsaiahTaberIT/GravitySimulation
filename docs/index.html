@@ -13,7 +13,81 @@
             <div class="scrollcontent">
                 <div class="content">
                     <h2>Contents:</h2>
-                    <div class="container"><p>fafwf af awf waf faf </p></div>
+
+                    <h3>
+                        <a href="#section-what" class="plainlink">What is it?</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-motivation" class="plainlink">Motivation</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-gameplay" class="plainlink">Gameplay</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-concepts" class="plainlink">Key Concepts</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-parralel" class="plainlink">Parralelism</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-performance" class="plainlink">Performance Wrinkle:</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-bruteforce" class="plainlink">Brute Force Approach</a>
+                    </h3>
+
+
+                    <h3>
+                        <a href="#section-specialization" class="plainlink">Specialization</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-partition" class="plainlink">Spatial Partitioning</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-visualize" class="plainlink">QuadTree Visualization</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-gpuquadtree" class="plainlink">GPU QuadTree</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-mistakes" class="plainlink">Mistakes</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-web" class="plainlink">Web Version?</a>
+                    </h3>
+
+                    <h3>
+                        <a href="#section-debt" class="plainlink">Technical Debt</a>
+                    </h3>
+                    <h3>
+                        <a href="#section-encapsulation" class="plainlink">Encapsulation</a>
+                    </h3>
+                    <h3>
+                        <a href="#section-delegates" class="plainlink">Delegates</a>
+                    </h3>
+                    <h3>
+                        <a href="#section-lessons" class="plainlink">Lessons</a>
+                    </h3>
+                    <h3>
+                        <a href="#section-readability" class="plainlink">Readablility</a>
+                    </h3>
+                    <h3>
+                        <a href="#section-plans" class="plainlink">Future Plans</a>
+                    </h3>
+                    <h3>
+                        <a href="#section-footnotes" class="plainlink">Footnotes</a>
+                    </h3>
 
                 </div>
             </div>
@@ -27,52 +101,57 @@
             </div>
 
             <div class="explain">
-                <h2>What is it?</h2>
+                <h2 id="section-what">What is it?</h2>
                 <p>This is a two dimensional particle based gravity simulation based on the newtonian model of gravity, coded in C# and HLSL through the unity game engine.</p>
-                <h2>Motivation.</h2>
+                <h2 id="section-motivation">Motivation</h2>
                 <p>This project was, and still is intended to be an intermediate stepping-stone towards making a BOIDS simulation because simulating gravity is relatively simple.</p>
-                <h2>Gameplay: (Placeholder)</h2>
+                <h2 id="section-gameplay">Gameplay: (Placeholder)</h2>
                 <div class="clip">
                     <iframe type="text/html" src="https://www.youtube.com/embed/tgbNymZ7vqY" allowfullscreen></iframe>
                 </div>
-                <h2>Key concepts:</h2>
-                <h3>Parallelism</h3>
+                <h2 id="section-concepts">Key concepts:</h2>
+                <h3 id="section-parralel" >Parallelism</h3>
                 <p>
                     making an N body gravity simulation is not an easy task. the naive approach of checking each particle against every other particle
-                    has a time complexity of O(n^2). however, it occured to me while making compute shaders for an image
-                    generation tool, that there isnt much difference between siccing the gpu on all pixels in an image, and siccing the gpu on any arbitrary
-                    collection of data. therefore, it seemed like the obvious choice for performance reasons because presuming that the GPU dispatch is able to do
-                    all calculations in parralel and in one step that reduces the "effective time complexity" to O(1)<a href="#footnote1">*</a> for computing the forces between particles. in theory anyway...
+                    has a time complexity of O(n^2). However, it occurred to me while making compute shaders for an image
+                    generation tool, that there isn't much difference between siccing the gpu on all pixels in an image, and siccing the gpu on any arbitrary
+                    collection of data. Therefore, it seemed like the obvious choice for performance reasons because presuming that the GPU dispatch is able to do
+                    all calculations in parallel and in one step that reduces the "effective time complexity" to O(1)<a href="#footnote1">*</a> for computing the forces between particles. In theory anyway...
+
                 </p>
 
-                <h4>Little performance wrinkle:</h4>
+                <h4 id="section-performance">Little performance wrinkle:</h4>
                 <p>
-                    The GPU isn't magic and has limits. You can't just dispatch any arbitrariliy large task and expect it to run instantly,
+                    The GPU isn't magic and has limits. You can't just dispatch any arbitrarily large task and expect it to run instantly,
                     if you dispatch more threads than you have on your machine then it will simply execute batches of threads in series (at least when you do it through unity).
+
                 </p>
-                <h4>Brute Force:</h4>
+                <h4 id="section-bruteforce" >Brute Force:</h4>
                 <p>
-                    My inital and longest lasting approach was to simply dispatch at most N GPU threads (one for each particle)
+                    My initial and longest lasting approach was to simply dispatch at most N GPU threads (one for each particle)
                     and have each thread Iterate N times, looping over every other particle calculating the total force and outputting to a buffer.
-                    this approach got me around 6000 particles before I considered the frame rate drops to be too high 10-15fps (I dont have a super fast computer);
+                    this approach got me around 6000 particles before I considered the frame rate drops to be too high 10-15fps (I don't have a super fast computer);
+
                 </p>
-                <h3>Fluff Removal / Specialization</h3>
+                <h3 id="section-specialization">Fluff Removal / Specialization</h3>
                 <p>
-                    The nice thing about the unity game engine, is that you have a bunch of tools to prevent you from reinventing the wheel.
+                    The nice thing about the Unity game engine, is that you have a bunch of tools to prevent you from reinventing the wheel.
                     You can just open a project and start making games without knowing how to make a physics engine or anything like that.
+
                 </p>
                 <p>
                     It is nice to have training wheels when learning to code, because doing everything from scratch can be daunting. unfortunately,
                     I have this tendency to be stubborn (especially while trying to learn something new) to simply refuse to google the industry standard solution.
-                    That is, if it is already possible to what im trying to do with my current knowledge.
+                    That is, if it is already possible to do what I'm trying to do with my current knowledge.
                     This can definitely make my output slower on a personal project like this, but it also
                     maintains the fun problem-solving aspect that keeps me invested, and often leads to a deeper understanding of something after deriving
                     it myself (when im not spending 4 hours overcomplicating gradients before re-inventing
                     bilinear-interpolation).
+
                 </p>
                 <p>
-                    With that in mind it shouldn't come as a suprise that while I started out using unity's systems to handle my particles
-                    I rather rapidly abandoned each of them one after another, eliminating interactions with the unity engine until it was basically entirely seperated.
+                    With that in mind it shouldn't come as a surprise that while I started out using unity's systems to handle my particles
+                    I rather rapidly abandoned each of them one after another, eliminating interactions with the unity engine until it was basically entirely separated.
 
                 </p>
                 <p>
@@ -81,7 +160,7 @@
                 </p>
                 <p>
                     The second thing I decoupled from was unity's physics engine, my thought process was simply that "unity's physics was designed to handle all general cases,
-                    so im lugging around all this bloat on all my objects that isn't needed."
+                    so I'm lugging around all this bloat on all my objects that isn't needed."
                 </p>
                 <p>
                     The final element was simply Unity's GameObject, since after removing the Sprites, the RigidBodies, and the Colliders,
@@ -89,92 +168,136 @@
                     there was no longer any need for my particles to be GameObjects anymore.
                 </p>
                 <p>
-                    At the end of this process, my simulation consisted of a few managment game objects, with one of them
+                    At the end of this process, my simulation consisted of a few management game objects, with one of them
                     containing a simple list of GravitationalBodies that on every physics step would be moved around according to gravity.
                 </p>
-                <h3>Spatial Partitioning</h3>
+                <h3 id="section-partition">Spatial Partitioning</h3>
                 <p>
                     Spatial Partitioning is the concept of grouping objects based on proximity
-                    with the idea being that if you have a system where most interactions will be at a short range e.g. collisions, then
-                    there is no reason to even consider far away objects, in my case the since gravity in real life works at an infinitly far distance,
+                    with the idea that if you have a system where most interactions will be at a short range e.g. collisions, then
+                    there is no reason to even consider far away objects, in my case the since gravity in real life works at an infinitely far distance,
                     you might think that this is useless. however when a group of particles is far away the gravity experienced towards them,
                     can be approximated as the pull towards the center of mass of all the particles in that group, basically
                     you can treat the entire collection of particles as a single particle.
                 <p />
                 <p>
-                    Remebering the brute force approach for calculating gravity, which when all is said, and done, leveraging parralelism results in a new
-                    "effective time complexity" of O(N)<a href="#footnote1">*</a> so after imagining some implementations for spatial partioning I actually decided to google something for once, and came across the Quadtree data structure, so I followed the first half
+                    Remembering the brute force approach for calculating gravity, which when all is said, and done, leveraging parallelism results in a new
+                    "effective time complexity" of O(N)<a href="#footnote1">*</a> so after imagining some implementations for spatial partitioning I actually decided to google something for once, and came across the Quadtree data structure, so I followed the first half
                     of a tutorial and implemented it for my particles.<a href="#footnote2">**</a>
                 </p>
                 <p>
                     Initially I was only able to use my QuadTree in a very limited way mainly for letting a user select a specific particle to
-                    inspect it based on where they clicked. this was because while constructing the quadtree has a time complexity on average of O(N log N) and reading from it N times is also O(N log N)
-                    doing both of those things in the CPU was simply slower than just brute forcing it on the GPU especially since the gravity equation isn't free.<a href="#footnote3">***</a> and I wasnt about to try and navigate a quadtree on the GPU that would be way to complicated for me.
+                    inspect it based on where they clicked. This was because while constructing the quadtree has a time complexity on average of O(N log N) and reading from it N times is also O(N log N)
+                    doing both of those things in the CPU was simply slower than just brute forcing it on the GPU especially since the gravity equation isn't free.<a href="#footnote3">***</a> and I wasn't about to try and navigate a quadtree on the GPU that would be way too complicated for me.
+
                 </p>
-                <h2>QuadTree Visualization in the editor</h2>
+                <h2 id="section-visualize">QuadTree Visualization in the editor (placeholder)</h2>
                 <div class="clip">
                     <iframe type="text/html" src="https://www.youtube.com/embed/tgbNymZ7vqY" allowfullscreen></iframe>
                 </div>
-                <h4>GPU QuadTree Navigation</h4>
+                <h4 id="section-gpuquadtree">GPU QuadTree Navigation</h4>
                 <p>
-                    I had no intention of querying the Tree on the GPU, GPU coding is pretty restrictive
-                    for example you aren't allowed to have Dynamically sized arrays nor reference types,
-                    while I remembered hearing about a stack based approach for something similar, I didn't
-                    really know how I would implement that because I was used to making stacks using dynamically resizing lists.
-                    and I had already decided that I wasnt going through the effort to implement it or learn it, unfortunately
-                    for me I had been recently been watching some videos on low level architecture and languages, and I was reminded
+                    I originally had no intention of querying the Tree on the GPU, coding for the GPU is very restrictive and
+                    while I remembered hearing about a stack based approach being used to query an OctTree from a video on ray tracing, I didn't
+                    really know how I would implement it because I was used to making stacks using dynamically resizing lists.
+                <p>
+                    Bear in mind here that I had already decided that I wasn't going through the effort to do this so I didn't really spend much effort trying to solve the problem.
+                    unfortunately for me though, I had recently been watching some videos on low level architecture and languages, and I was reminded of the rather simple fact:
                     "oh I can just use a fixed-sized array and a pointer... duh." I say "unfortunately" because this meant that I had
-                    theoretically solved, every sub-problem of the GPU Tree navigation which meant I no longer had an excuse not to do it.
-                </p>
-                <h2>Final Prodecure:</h2>
-                <h3>High Level Explanation:</h3>
-                <p>
-                    Start with a list of particles.
-                    Iterate over the list, and insert each gravitational body into a QuadTree.
-                    keep track of the center mass of each node as you insert. pass the tree to a compute shader.
-                    the compute shader navigates the tree, decides whether to find the gravity from the center of mass of a quadrant or particle based on distance.
-                    the compute shader also detects collisions for all particles if they are within a certain distance.
-                    the compute shader writes the force information and collision information to a compute buffer indexed to correspond to the gravitational body.
-                    apply forces. apply collisions. repeat next frame.
-                </p>
-                <h3>More Detailed Explanation:</h3>
-                <p>
-                    Start with a list for particles. When a particle needs to be added, append it to the list. If a particle needs to be removed set it to null.
-                    use a select statement to remove all null references from the list. create a new list, that carries just the important information for gravity
-                    and collsion calculations in the form of a struct because you can't pass classes into a compute shader.
-                    if the tree exists wipe it. start inserting points. To make the tree generation process
-                    as lightwieght as possible all information pertaining to the particles will be in the form of pointers to the particle list or other nodes in the tree.
-                    the nodes of the tree each store the weighted average position of all particles that have passed through that node, as well as the total mass, (this allows you to derive the force from the center of mass including all branches below)
-                    the tree itself counter-intuitively needs to be a reference type, this is to reduce memory copy operations during mutations of the tree which happen constantly as insertions occur.
-                    once the reference type tree is created, you need to convert it to a value type tree, so it can be passed into the compute shader, it also is important to mention,
-                    that the standard nested tree structure is entirely incompatable with GPUs which means that your tree needs to be one dimensional.
-                    Unfortunately I do not have the energy to explain the entire stack based appraoch for GPU tree navigation, because while each part of the system is very simple, the whole is very complex, it was bad enough writing the thing.
-                    however the collision detection works by comparing two particles and calculating the minimum distance between them as
-                    they are linearly interpolated between their position on the last frame and their current position, if this minumum distance is less than their combined radius, then a collision flag is set and a pointer is set that corresponds to the other particle
-
-
-
-
-
+                    theoretically solved, every part of the GPU Tree navigation problem which meant I no longer had an excuse not to do it.
                 </p>
 
-                <h4>Footnotes:</h4>
+
+
+                <h2 id="section-mistakes">Mistakes:</h2>
+                <h3 id="section-web">Why Isn't there a web version?</h3>
+                <P>
+                    All my other projects so far have had web releases, so why not this one? People who are already very experienced with this will know the answer. but I will explain it for those who don't already know: you may have noticed the use of the term "compute shader"
+                    A compute shader is a type of program that runs on the GPU that leverages the amazing ability of the GPU to do many tasks in parallel. while the GPU
+                    is mostly used for graphics, smart people realized that you could use that power for other things so long as they are independent, or could be coerced into an independent structure.
+                    Something I didn't know until I tried to build my project for WebGL is that WebGL in its current iteration does not support compute shaders.
+                </P>
+                <P>
+                    You might be thinking: "Wow what an idiot they didn't bother to check if the thing their entire project relies on will work on the platform they're is planning to release to"
+                    and in my defense while yes it is extremely embarrassing that I spent a month working on a project with the full intention to release it on WebGL while it was impossible
+                    to do so basically immediately upon starting the project. It is also the case that I did at some point in the past google the question: "Can Unity Builds for WebGl run shaders" (which was a stupid question at the time, because WebGl is literally For running shaders)
+                    but the answer I got was "yes" it can. and it simply did not occur to me that WebGL could handle "fragment shaders" and "vertex shaders" just not compute shaders.
+                    with that being said, i'm rapidly becoming burnt out with this project and if I don't put out something about it soon it will collect dust on my hard drive rather than (debatably) strengthening my portfolio<a href="#footnote4">****</a>
+                </P>
+                <h3 id="section-debt">Technical debt</h3>
+                <P>
+                    Somewhat inevitably, but especially for a developer that is self taught you make decisions at the start that end up making things worse for you later, for instance,
+                    it is rather obvious in hindsight that my GravityController should have just been a static class, the entire design of that object was basically a manager for the whole simulation
+                    there was never going to be more than one of them, so needing to lug around a reference to it from object to object because it is what was holding the current state of the simulation is asinine.
+                </P>
+                <h3 id="section-encapsulation">Poor Encapsulation</h3>
+                <P>
+                    Because my projects are low security, and I am the only person able to make changes to my code, I have had a bad habit of marking fields as "public"
+                    because I want to easily read and write to the internal state of an object from the outside, this is bad coding practice because
+                    it can make it difficult to determine the cause of a bug. this also means that the only thing preventing my code from turning into spaghetti
+                    is my own self restraint and ability to limit myself to altering state in situations where I'm certain it wont cause problems (which in fairness i've been able to do pretty well)
+                </P>
+                <h3 id="section-delegates">Under-Utilization of Delegates/Events</h3>
+                <P>
+                    Historically my approach to reacting to state change in an object has been either: 1. the object holds references to all other objects that depend on the state and calls functions on those objects when a change is made.
+                    or 2. external objects peer into the state of another object occasionally and react if they detect a state change. Both of these solutions have significant problems. The first option involves a lot of hardcoding and juggling references,
+                    and the second option is extremely wastefull. because of that tendency I have to solve problems with my current knowledge first when trying to learn, and the fact I have no one to ask about this stuff
+                    I end up learning stuff on accident/through osmosis while researching other stuff, so while I have been vaguely aware of delegates for a while now, it is only recently that
+                    I have actually sat down to actually understand what they are for and how they work, Delegates/Messages/Events (all similar ideas) are quite literally made for this kind of reacting to state
+                    changes problems and when combined with properties they can be an effective tool for updating many objects seamlessly.
+                </P>
+                <h3 id="section-misc">Smaller stuff</h3>
+                <P>
+                    My FlatQuadtree stores four hardcoded pointers to the children of each node which is four integers totalling 16 bytes (Arrays can't be passed into a compute buffer so don't @me)
+                    However, because all child nodes are next to each other, I can just store a pointer to the first child and just do an offset to find each remaining child saving 12 bytes per node. im not planning on fixing this anytime soon so it is a mistake
+                </P>
+                <h2 id="section-lessons">Lessons learned:</h2>
+                <h3 id="section-readability">Performance Vs Readability</h3>
+                <P>
+                    This project has had a lot of code golf in it, finding little areas of performance improvements to eek out a bit higher of a frame rate. when writing code I have the motto "don't be stupid"
+                    that is don't write code that is repetitive/hard to read/disorganized whether I manage to live up to that motto is debatable, but I try not to solve problems in ways that are gross, however for
+                    the sake of performance I have been forced to write some down-right dastardly code in this project.
+                </P>
+                <h2 id="section-plans">Plans for the future</h2>
+                <P>
+                    After finishing the <a href="https://isaiahtaberit.github.io/GravitySimulation/" target=”_blank”>Website</a> for this project I have two main ideas,
+                    one is to learn angular (but that might be a bit because I've already spent a full day just trying to set up a project and ended up in a situation
+                    where I was unable to make new components because I did the setup wrong somehow, which defeats the purpose of the entire framework) and the other idea is to do that BOIDS simulation I mentioned earlier.
+                    I may return to this project at some point later to create a CPU-only web build, or figure out how to make it easy for people to download the build from the <a href="https://github.com/IsaiahTaberIT/GravitySimulation" target=”_blank”>Repo</a>
+
+                </P>
+
+
+
+
+                <P>
+
+                </P>
+                <h4 id="section-footnotes">Footnotes:</h4>
 
                 <p id="footnote1">
-                    *technically speaking, time complexity just refers to the rate at which the number of operations grows as a function of elements, so parralelism doesn't
-                    actually reduce the time complexity for a given task it just makes it happen faster. because of the intuitve usefulness of big O notiation i'm using "effective time complexity"
+                    *technically speaking, time complexity just refers to the rate at which the number of operations grows as a function of elements, so parallelism doesn't
+                    actually reduce the time complexity for a given task; it just makes it happen faster. Because of the intuitive usefulness of big O notation I'm using "effective time complexity"
                     to mean the rate at which the actual time for execution grows for a program as a function of the number of elements, im only including this explanation
-                    because I don't want any potential experts reading this to think im a complete idiot. (partial idiot is fine just not complete).
+                    because I don't want any potential experts reading this to think I'm a complete idiot. (partial idiot is fine, just not complete).
                 </p>
                 <p id="footnote2">
                     **The tutorial I followed for the QuadTree was this one: <a href="https://www.youtube.com/watch?v=OJxEcs0w_kE" target=”_blank”>Tutorial</a> made by The Coding Train,
-                    eagle eyed people following that link may notice that he made his in JS not C# which (a little suprisingly) didn't really matter. in part because it was a very good tutorial, and also because
-                    the underlying concepts stay the same across languages. while I wouldn't recommend doing an on-the-fly translation between languages like that
+                    eagle eyed people following that link may notice that he made his in JS not C# which (a little surprisingly) didn't really matter. in part because it was a very good tutorial, and also because
+                    the underlying concepts stay the same across languages. While I wouldn't recommend doing an on-the-fly translation between languages like that
                     for absolute beginners, it is kinda fun that you sort of just can.
                 </p>
                 <p id="footnote3">
-                    ***The CPU QuadTree handled around 4k particles before serious performance issues rather than 6k This solution would have been faster on a better computer given the time complexity O(N log N) vs O(N ^ 2) but because my CPU was a potato it couldnt handle it.
+                    ***The CPU QuadTree handled around 4k particles before serious performance issues rather than 6k. This solution would have been faster on a better computer given the time complexity O(N log N) vs O(N ^ 2) but because my CPU was a potato it couldn't handle it.
                 </p>
+                <p id="footnote4">
+                    ****I'm aware that there are many ways to solve this problem, such as translating my compute shaders into fragment shaders and hijacking
+                    the rendering pipeline to do the physics, or switching to WebGPU I however I simply do not have the energy to do that right now I've been ready to move on for a while.
+                </p>
+                <div class="buffer"></div>
+
+
+
             </div>
         </div>
     </div>
