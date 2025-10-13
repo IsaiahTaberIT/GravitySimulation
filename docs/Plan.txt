@@ -1,0 +1,19 @@
+Structure: 
+
+What is it: (explain what was built) include clips of project in use
+
+key concepts: (describe important ideas that were used in the process)
+
+Concept 1: parallelism
+Concept 2: removal of fluff
+Concept 3: Spatial partitioning
+
+Interesting procedural details: 
+quadtree iterations
+gpu quadtree navigation
+
+
+
+
+
+ 

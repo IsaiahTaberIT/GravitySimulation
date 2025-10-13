@@ -5,7 +5,7 @@ using UnityEngine;
 [ExecuteAlways]
 public class EditorManager : Editor
 {
-    public FullScreenPassRendererFeature myFullScreenFeature;
+    public UnityEngine.Rendering.Universal.FullScreenPassRendererFeature myFullScreenFeature;
     private void OnSceneGUI()
     {
         myFullScreenFeature.SetActive(false); // Disables the feature

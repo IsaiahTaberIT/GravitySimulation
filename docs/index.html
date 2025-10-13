@@ -1,127 +1,192 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | Simulation</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+    <title>Gravity Simulator</title>
+    <link rel="stylesheet" href="index.css">
+
+</head>
+<body>
+    <div class="mainmenu">
+        <div class="leftmenu">
+            <div class="scrollcontent">
+                <div class="content">
+                    <h2>Contents:</h2>
+                    <div class="container"><p>fafwf af awf waf faf </p></div>
+
+                </div>
+            </div>
+
         </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-logo-title-footer"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">Simulation</div>
-      </div>
+
+
+        <div class="rightmenu">
+            <div class="block1">
+                <h1>2D Gravity Simulator</h1>
+            </div>
+
+            <div class="explain">
+                <h2>What is it?</h2>
+                <p>This is a two dimensional particle based gravity simulation based on the newtonian model of gravity, coded in C# and HLSL through the unity game engine.</p>
+                <h2>Motivation.</h2>
+                <p>This project was, and still is intended to be an intermediate stepping-stone towards making a BOIDS simulation because simulating gravity is relatively simple.</p>
+                <h2>Gameplay: (Placeholder)</h2>
+                <div class="clip">
+                    <iframe type="text/html" src="https://www.youtube.com/embed/tgbNymZ7vqY" allowfullscreen></iframe>
+                </div>
+                <h2>Key concepts:</h2>
+                <h3>Parallelism</h3>
+                <p>
+                    making an N body gravity simulation is not an easy task. the naive approach of checking each particle against every other particle
+                    has a time complexity of O(n^2). however, it occured to me while making compute shaders for an image
+                    generation tool, that there isnt much difference between siccing the gpu on all pixels in an image, and siccing the gpu on any arbitrary
+                    collection of data. therefore, it seemed like the obvious choice for performance reasons because presuming that the GPU dispatch is able to do
+                    all calculations in parralel and in one step that reduces the "effective time complexity" to O(1)<a href="#footnote1">*</a> for computing the forces between particles. in theory anyway...
+                </p>
+
+                <h4>Little performance wrinkle:</h4>
+                <p>
+                    The GPU isn't magic and has limits. You can't just dispatch any arbitrariliy large task and expect it to run instantly,
+                    if you dispatch more threads than you have on your machine then it will simply execute batches of threads in series (at least when you do it through unity).
+                </p>
+                <h4>Brute Force:</h4>
+                <p>
+                    My inital and longest lasting approach was to simply dispatch at most N GPU threads (one for each particle)
+                    and have each thread Iterate N times, looping over every other particle calculating the total force and outputting to a buffer.
+                    this approach got me around 6000 particles before I considered the frame rate drops to be too high 10-15fps (I dont have a super fast computer);
+                </p>
+                <h3>Fluff Removal / Specialization</h3>
+                <p>
+                    The nice thing about the unity game engine, is that you have a bunch of tools to prevent you from reinventing the wheel.
+                    You can just open a project and start making games without knowing how to make a physics engine or anything like that.
+                </p>
+                <p>
+                    It is nice to have training wheels when learning to code, because doing everything from scratch can be daunting. unfortunately,
+                    I have this tendency to be stubborn (especially while trying to learn something new) to simply refuse to google the industry standard solution.
+                    That is, if it is already possible to what im trying to do with my current knowledge.
+                    This can definitely make my output slower on a personal project like this, but it also
+                    maintains the fun problem-solving aspect that keeps me invested, and often leads to a deeper understanding of something after deriving
+                    it myself (when im not spending 4 hours overcomplicating gradients before re-inventing
+                    bilinear-interpolation).
+                </p>
+                <p>
+                    With that in mind it shouldn't come as a suprise that while I started out using unity's systems to handle my particles
+                    I rather rapidly abandoned each of them one after another, eliminating interactions with the unity engine until it was basically entirely seperated.
+
+                </p>
+                <p>
+                    The first thing to go was the universal rendering pipeline. I decided that because all I needed to do was to draw some circles that I would be better off just writing that code myself.
+                    That way I could just use compute shaders to do the rendering which was great because I already had experience with them (this was actually a mistake).
+                </p>
+                <p>
+                    The second thing I decoupled from was unity's physics engine, my thought process was simply that "unity's physics was designed to handle all general cases,
+                    so im lugging around all this bloat on all my objects that isn't needed."
+                </p>
+                <p>
+                    The final element was simply Unity's GameObject, since after removing the Sprites, the RigidBodies, and the Colliders,
+                    literally all that was left on my GravitationalBody GameObject was the Transform component and my GravitationalBody script.
+                    there was no longer any need for my particles to be GameObjects anymore.
+                </p>
+                <p>
+                    At the end of this process, my simulation consisted of a few managment game objects, with one of them
+                    containing a simple list of GravitationalBodies that on every physics step would be moved around according to gravity.
+                </p>
+                <h3>Spatial Partitioning</h3>
+                <p>
+                    Spatial Partitioning is the concept of grouping objects based on proximity
+                    with the idea being that if you have a system where most interactions will be at a short range e.g. collisions, then
+                    there is no reason to even consider far away objects, in my case the since gravity in real life works at an infinitly far distance,
+                    you might think that this is useless. however when a group of particles is far away the gravity experienced towards them,
+                    can be approximated as the pull towards the center of mass of all the particles in that group, basically
+                    you can treat the entire collection of particles as a single particle.
+                <p />
+                <p>
+                    Remebering the brute force approach for calculating gravity, which when all is said, and done, leveraging parralelism results in a new
+                    "effective time complexity" of O(N)<a href="#footnote1">*</a> so after imagining some implementations for spatial partioning I actually decided to google something for once, and came across the Quadtree data structure, so I followed the first half
+                    of a tutorial and implemented it for my particles.<a href="#footnote2">**</a>
+                </p>
+                <p>
+                    Initially I was only able to use my QuadTree in a very limited way mainly for letting a user select a specific particle to
+                    inspect it based on where they clicked. this was because while constructing the quadtree has a time complexity on average of O(N log N) and reading from it N times is also O(N log N)
+                    doing both of those things in the CPU was simply slower than just brute forcing it on the GPU especially since the gravity equation isn't free.<a href="#footnote3">***</a> and I wasnt about to try and navigate a quadtree on the GPU that would be way to complicated for me.
+                </p>
+                <h2>QuadTree Visualization in the editor</h2>
+                <div class="clip">
+                    <iframe type="text/html" src="https://www.youtube.com/embed/tgbNymZ7vqY" allowfullscreen></iframe>
+                </div>
+                <h4>GPU QuadTree Navigation</h4>
+                <p>
+                    I had no intention of querying the Tree on the GPU, GPU coding is pretty restrictive
+                    for example you aren't allowed to have Dynamically sized arrays nor reference types,
+                    while I remembered hearing about a stack based approach for something similar, I didn't
+                    really know how I would implement that because I was used to making stacks using dynamically resizing lists.
+                    and I had already decided that I wasnt going through the effort to implement it or learn it, unfortunately
+                    for me I had been recently been watching some videos on low level architecture and languages, and I was reminded
+                    "oh I can just use a fixed-sized array and a pointer... duh." I say "unfortunately" because this meant that I had
+                    theoretically solved, every sub-problem of the GPU Tree navigation which meant I no longer had an excuse not to do it.
+                </p>
+                <h2>Final Prodecure:</h2>
+                <h3>High Level Explanation:</h3>
+                <p>
+                    Start with a list of particles.
+                    Iterate over the list, and insert each gravitational body into a QuadTree.
+                    keep track of the center mass of each node as you insert. pass the tree to a compute shader.
+                    the compute shader navigates the tree, decides whether to find the gravity from the center of mass of a quadrant or particle based on distance.
+                    the compute shader also detects collisions for all particles if they are within a certain distance.
+                    the compute shader writes the force information and collision information to a compute buffer indexed to correspond to the gravitational body.
+                    apply forces. apply collisions. repeat next frame.
+                </p>
+                <h3>More Detailed Explanation:</h3>
+                <p>
+                    Start with a list for particles. When a particle needs to be added, append it to the list. If a particle needs to be removed set it to null.
+                    use a select statement to remove all null references from the list. create a new list, that carries just the important information for gravity
+                    and collsion calculations in the form of a struct because you can't pass classes into a compute shader.
+                    if the tree exists wipe it. start inserting points. To make the tree generation process
+                    as lightwieght as possible all information pertaining to the particles will be in the form of pointers to the particle list or other nodes in the tree.
+                    the nodes of the tree each store the weighted average position of all particles that have passed through that node, as well as the total mass, (this allows you to derive the force from the center of mass including all branches below)
+                    the tree itself counter-intuitively needs to be a reference type, this is to reduce memory copy operations during mutations of the tree which happen constantly as insertions occur.
+                    once the reference type tree is created, you need to convert it to a value type tree, so it can be passed into the compute shader, it also is important to mention,
+                    that the standard nested tree structure is entirely incompatable with GPUs which means that your tree needs to be one dimensional.
+                    Unfortunately I do not have the energy to explain the entire stack based appraoch for GPU tree navigation, because while each part of the system is very simple, the whole is very complex, it was bad enough writing the thing.
+                    however the collision detection works by comparing two particles and calculating the minimum distance between them as
+                    they are linearly interpolated between their position on the last frame and their current position, if this minumum distance is less than their combined radius, then a collision flag is set and a pointer is set that corresponds to the other particle
+
+
+
+
+
+                </p>
+
+                <h4>Footnotes:</h4>
+
+                <p id="footnote1">
+                    *technically speaking, time complexity just refers to the rate at which the number of operations grows as a function of elements, so parralelism doesn't
+                    actually reduce the time complexity for a given task it just makes it happen faster. because of the intuitve usefulness of big O notiation i'm using "effective time complexity"
+                    to mean the rate at which the actual time for execution grows for a program as a function of the number of elements, im only including this explanation
+                    because I don't want any potential experts reading this to think im a complete idiot. (partial idiot is fine just not complete).
+                </p>
+                <p id="footnote2">
+                    **The tutorial I followed for the QuadTree was this one: <a href="https://www.youtube.com/watch?v=OJxEcs0w_kE" target=”_blank”>Tutorial</a> made by The Coding Train,
+                    eagle eyed people following that link may notice that he made his in JS not C# which (a little suprisingly) didn't really matter. in part because it was a very good tutorial, and also because
+                    the underlying concepts stay the same across languages. while I wouldn't recommend doing an on-the-fly translation between languages like that
+                    for absolute beginners, it is kinda fun that you sort of just can.
+                </p>
+                <p id="footnote3">
+                    ***The CPU QuadTree handled around 4k particles before serious performance issues rather than 6k This solution would have been faster on a better computer given the time complexity O(N log N) vs O(N ^ 2) but because my CPU was a potato it couldnt handle it.
+                </p>
+            </div>
+        </div>
     </div>
-    <script>
-      var canvas = document.querySelector("#unity-canvas");
-
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        var warningBanner = document.querySelector("#unity-warning");
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
-
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/docs.loader.js";
-      var config = {
-        arguments: [],
-        dataUrl: buildUrl + "/docs.data",
-        frameworkUrl: buildUrl + "/docs.framework.js",
-        codeUrl: buildUrl + "/docs.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "Simulation",
-        productVersion: "0.1.0",
-        showBanner: unityShowBanner,
-      };
-
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
-
-      // If you would like all file writes inside Unity Application.persistentDataPath
-      // directory to automatically persist so that the contents are remembered when
-      // the user revisits the site the next time, uncomment the following line:
-      // config.autoSyncPersistentDataPath = true;
-      // This autosyncing is currently not the default behavior to avoid regressing
-      // existing user projects that might rely on the earlier manual
-      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
-      // expected to change.
-
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        document.querySelector("#unity-container").className = "unity-mobile";
-        canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
+   
 
 
-      } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-        canvas.style.width = "960px";
-        canvas.style.height = "600px";
-      }
 
-      document.querySelector("#unity-loading-bar").style.display = "block";
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                document.querySelector("#unity-loading-bar").style.display = "none";
-                document.querySelector("#unity-fullscreen-button").onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
 
-              }).catch((message) => {
-                alert(message);
-              });
-            };
 
-      document.body.appendChild(script);
 
-    </script>
-  </body>
+    <script src="index.js"></script>
+
+</body>
 </html>
